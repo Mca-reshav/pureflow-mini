@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+.env
+.env.*
+!.env.example
+
+coverage
+*.log
+
+backend/generated
+
+postgres-data
+minio-data
