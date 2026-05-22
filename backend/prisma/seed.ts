@@ -9,7 +9,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
-const password = 'Password@123',
+export const password = 'Password@123',
   emailObj = Object.freeze({
     admin: 'admin@pureflow.dev',
     analyst: 'analyst@pureflow.dev',
