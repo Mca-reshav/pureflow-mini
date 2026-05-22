@@ -4,10 +4,301 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["iam", "project", "task", "time_log", "notify", "report", "audit"]
+}
+
+enum Role {
+  ADMIN
+  BM
+  ANALYST
+
+  @@schema("iam")
+}
+
+enum UserStatus {
+  active
+  inactive
+
+  @@schema("iam")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  role         Role       @default(ANALYST)
+  status       UserStatus @default(active)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  sessions       Session[]
+  ownedProjects  Project[]       @relation("ProjectOwner")
+  projectMembers ProjectMember[]
+  assignedTasks  Task[]          @relation("TaskAssignee")
+  createdTasks   Task[]          @relation("TaskCreator")
+  timeEntries    TimeEntry[]
+  notifications  Notification[]
+  auditEvents    AuditEvent[]    @relation("AuditActor")
+
+  @@map("users")
+  @@schema("iam")
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  ipHash           String?   @map("ip_hash")
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz()
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz()
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+  @@schema("iam")
+}
+
+enum ProjectStatus {
+  active
+  archived
+  completed
+
+  @@schema("project")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(active)
+  ownerId     String        @map("owner_id")
+  startDate   DateTime?     @map("start_date") @db.Date
+  endDate     DateTime?     @map("end_date") @db.Date
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+
+  owner   User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  members ProjectMember[]
+  tasks   Task[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("projects")
+  @@schema("project")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  addedBy   String   @map("added_by")
+  addedAt   DateTime @default(now()) @map("added_at") @db.Timestamptz()
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+  @@schema("project")
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  done
+  blocked
+
+  @@schema("task")
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  critical
+
+  @@schema("task")
+}
+
+model Task {
+  id              String       @id @default(cuid())
+  projectId       String       @map("project_id")
+  title           String
+  description     String?
+  status          TaskStatus   @default(todo)
+  priority        TaskPriority @default(medium)
+  assigneeId      String?      @map("assignee_id")
+  createdById     String       @map("created_by_id")
+  expectedMinutes Int?         @map("expected_minutes")
+  dueDate         DateTime?    @map("due_date") @db.Date
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    User?       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy   User        @relation("TaskCreator", fields: [createdById], references: [id])
+  timeEntries TimeEntry[]
+
+  @@index([projectId, status])
+  @@index([assigneeId])
+  @@map("tasks")
+  @@schema("task")
+}
+
+model TimeEntry {
+  id        String   @id @default(cuid())
+  taskId    String   @map("task_id")
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  minutes   Int
+  entryDate DateTime @map("entry_date") @db.Date
+  notes     String?
+  isLate    Boolean  @default(false) @map("is_late")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  task     Task               @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user     User               @relation(fields: [userId], references: [id])
+  versions TimeEntryVersion[]
+
+  @@index([userId, entryDate])
+  @@index([taskId])
+  @@index([projectId, entryDate])
+  @@map("time_entries")
+  @@schema("time_log")
+}
+
+model TimeEntryVersion {
+  id          String   @id @default(cuid())
+  timeEntryId String   @map("time_entry_id")
+  versionNo   Int      @map("version_no")
+  beforeJson  Json     @map("before_json")
+  afterJson   Json     @map("after_json")
+  editedBy    String   @map("edited_by")
+  editedAt    DateTime @default(now()) @map("edited_at") @db.Timestamptz()
+
+  timeEntry TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+
+  @@index([timeEntryId])
+  @@map("time_entry_versions")
+  @@schema("time_log")
+}
+
+enum NotificationType {
+  task_assigned
+  project_member_added
+  report_ready
+  time_late_logged
+
+  @@schema("notify")
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String           @map("user_id")
+  type       NotificationType
+  title      String
+  body       String
+  entityType String?          @map("entity_type")
+  entityId   String?          @map("entity_id")
+  isRead     Boolean          @default(false) @map("is_read")
+  eventId    String?          @unique @map("event_id")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  readAt     DateTime?        @map("read_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+  @@schema("notify")
+}
+
+enum ReportJobStatus {
+  queued
+  running
+  completed
+  failed
+
+  @@schema("report")
+}
+
+enum ReportFormat {
+  csv
+  xlsx
+
+  @@schema("report")
+}
+
+model ReportJob {
+  id                 String          @id @default(cuid())
+  requestedBy        String          @map("requested_by")
+  projectId          String?         @map("project_id")
+  dateFrom           DateTime?       @map("date_from") @db.Date
+  dateTo             DateTime?       @map("date_to") @db.Date
+  format             ReportFormat    @default(csv)
+  status             ReportJobStatus @default(queued)
+  permissionSnapshot Json            @map("permission_snapshot")
+  errorMessage       String?         @map("error_message")
+  queuedAt           DateTime        @default(now()) @map("queued_at") @db.Timestamptz()
+  startedAt          DateTime?       @map("started_at") @db.Timestamptz()
+  completedAt        DateTime?       @map("completed_at") @db.Timestamptz()
+
+  artifact ReportArtifact?
+
+  @@index([requestedBy])
+  @@index([status])
+  @@map("report_jobs")
+  @@schema("report")
+}
+
+model ReportArtifact {
+  id            String    @id @default(cuid())
+  jobId         String    @unique @map("job_id")
+  filename      String
+  mimeType      String    @map("mime_type")
+  sizeBytes     Int       @map("size_bytes")
+  storagePath   String    @map("storage_path")
+  downloadCount Int       @default(0) @map("download_count")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz()
+
+  job ReportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("report_artifacts")
+  @@schema("report")
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String?  @map("actor_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  beforeJson Json?    @map("before_json")
+  afterJson  Json?    @map("after_json")
+  requestId  String?  @map("request_id")
+  service    String   @default("api")
+  ipHash     String?  @map("ip_hash")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@map("audit_events")
+  @@schema("audit")
 }
