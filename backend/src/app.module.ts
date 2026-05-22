@@ -4,7 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { HealthController } from './health.controller';
+import { HealthModule } from './modules/health/health.module';
+import { RedisService } from './services/redis/redis.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -33,7 +34,8 @@ import { HealthController } from './health.controller';
 
     PrismaModule,
     AuthModule,
+    HealthModule,
   ],
-  controllers: [HealthController],
+  providers: [RedisService],
 })
-export class AppModule { }
+export class AppModule {}
