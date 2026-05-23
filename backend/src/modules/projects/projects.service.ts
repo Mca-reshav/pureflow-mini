@@ -4,11 +4,15 @@ import { Role } from '@prisma/client';
 import { AddMemberDto, CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { baseSelect, fetchPopulated } from './projects.utils';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ProjectsService {
   private readonly logger = new Logger(ProjectsService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll(userId: string, role: Role) {
     try {
@@ -178,6 +182,14 @@ export class ProjectsService {
           user: { select: { ...fetchPopulated.owner.select, role: true } },
         },
       });
+
+      if (member)
+        await this.notificationsService.emitMemberAdded({
+          projectId,
+          projectName: project.name,
+          userId: dto.userId,
+          addedBy: actorId,
+        });
 
       this.logger.log(`Member added ::  ${projectId} by ${actorId}`);
       return {

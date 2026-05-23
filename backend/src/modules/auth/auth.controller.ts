@@ -92,7 +92,7 @@ export class AuthController {
         return { success: false, message: 'Refresh token missing' };
       const response = await this.authService.refresh(refreshToken);
 
-      if (!response || response.success || !response.data)
+      if (!response || !response.success || !response.data)
         return {
           success: false,
           message: response.message || 'Failed to refresh',
