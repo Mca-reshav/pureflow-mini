@@ -7,6 +7,7 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/auth.dto';
@@ -22,6 +23,8 @@ import type { Request, Response } from 'express';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Public()
@@ -67,7 +70,7 @@ export class AuthController {
         message: 'Logged-in success',
       };
     } catch (error) {
-      console.log('Error in login controller', error);
+      this.logger.error('Error in login controller', error);
       return { success: false, message: 'Failed to login' };
     }
   }
@@ -103,7 +106,7 @@ export class AuthController {
         data: { accessToken },
       };
     } catch (error) {
-      console.log('Error in refresh controller', error);
+      this.logger.error('Error in refresh controller', error);
       return { success: false, message: 'Failed to refresh' };
     }
   }
@@ -124,7 +127,7 @@ export class AuthController {
 
       return { success: true, message: 'Logged out successfully' };
     } catch (error) {
-      console.log('Error in logout controller', error);
+      this.logger.error('Error in logout controller', error);
       return { success: false, message: 'Failed to logout' };
     }
   }
@@ -143,7 +146,7 @@ export class AuthController {
         return { success: false, message: resp.message };
       return { success: true, message: 'Fetched success', data: resp.data };
     } catch (error) {
-      console.log('Error in me controller', error);
+      this.logger.error('Error in me controller', error);
       return { success: false, message: 'Failed to fetch user' };
     }
   }

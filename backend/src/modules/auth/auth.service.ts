@@ -72,7 +72,7 @@ export class AuthService {
 
       return { success: true, data: { accessToken, refreshToken, user } };
     } catch (error) {
-      console.log('Error in login service', error);
+      this.logger.error('Error in login service', error);
       return { success: false, message: 'Internal server error' };
     }
   }
@@ -143,7 +143,7 @@ export class AuthService {
         message: 'Token refreshed',
       };
     } catch (error) {
-      console.log('Error in refresh service', error);
+      this.logger.error('Error in refresh service', error);
       return { success: false, message: 'Internal server error' };
     }
   }
@@ -156,7 +156,7 @@ export class AuthService {
       this.logger.log(`User logged out: userId=${userId}`);
       return { success: true, message: 'Revoked success' };
     } catch (error) {
-      console.log('Error in logout service', error);
+      this.logger.error('Error in logout service', error);
       return { success: false, message: 'Internal server error' };
     }
   }
@@ -190,7 +190,33 @@ export class AuthService {
 
       return { success: true, data: respObj, message: 'Fetched success' };
     } catch (error) {
-      console.log('Error in getMe service', error);
+      this.logger.error('Error in getMe service', error);
+      return { success: false, message: 'Internal server error' };
+    }
+  }
+
+  async revokeAllUserSessions(userId: string) {
+    try {
+      const sessions = await this.prisma.session.findMany({
+        where: { userId, revokedAt: null },
+        select: { id: true },
+      });
+      if (!sessions || !Array.isArray(sessions))
+        return { success: false, message: 'Failed to get sessions' };
+
+      for (const session of sessions) {
+        const resp = await this.revokeSession(session.id);
+        if (!resp)
+          return {
+            success: false,
+            message: 'Failed to revoke session :: ' + session.id,
+          };
+      }
+
+      this.logger.log(`All sessions revoked for userId=${userId}`);
+      return { success: true, message: 'Success on revoke all ' };
+    } catch (error) {
+      this.logger.error('Error in revoke session service', error);
       return { success: false, message: 'Internal server error' };
     }
   }

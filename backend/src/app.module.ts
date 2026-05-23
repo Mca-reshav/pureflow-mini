@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { RedisService } from './services/redis/redis.service';
+import { UsersModule } from './modules/users/users.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,6 +36,7 @@ import { RedisService } from './services/redis/redis.service';
     PrismaModule,
     AuthModule,
     HealthModule,
+    UsersModule,
   ],
   providers: [RedisService],
 })
