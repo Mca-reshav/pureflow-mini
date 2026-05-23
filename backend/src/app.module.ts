@@ -9,6 +9,7 @@ import { RedisService } from './services/redis/redis.service';
 import { UsersModule } from './modules/users/users.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { TimeModule } from './modules/time/time.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -41,6 +42,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     UsersModule,
     ProjectsModule,
     TasksModule,
+    TimeModule,
   ],
   providers: [RedisService],
 })

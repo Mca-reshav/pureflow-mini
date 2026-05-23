@@ -32,7 +32,7 @@ export class TasksService {
       return {
         success: true,
         data: this.sanitizeTasks(tasks, role),
-        message: 'Tasks fetched successfully',
+        message: 'Tasks fetched success',
       };
     } catch (error) {
       this.logger.error('Error in findAll', error);
@@ -56,7 +56,7 @@ export class TasksService {
       return {
         success: true,
         data: this.sanitizeTasks(tasks, role),
-        message: 'My tasks fetched successfully',
+        message: 'My tasks fetched success',
       };
     } catch (error) {
       this.logger.error('Error in findMyTasks', error);
@@ -100,7 +100,7 @@ export class TasksService {
       return {
         success: true,
         data: this.sanitizeTask(task, role),
-        message: 'Task fetched successfully',
+        message: 'Task fetched success',
       };
     } catch (error) {
       this.logger.error('Error in findOne', error);
@@ -143,7 +143,7 @@ export class TasksService {
       return {
         success: true,
         data: task,
-        message: 'Task created successfully',
+        message: 'Task created success',
       };
     } catch (error) {
       this.logger.error('Error in create', error);
@@ -199,7 +199,7 @@ export class TasksService {
       return {
         success: true,
         data: this.sanitizeTask(updated, role),
-        message: 'Task updated successfully',
+        message: 'Task updated success',
       };
     } catch (error) {
       this.logger.error('Error in task update', error);
@@ -233,7 +233,7 @@ export class TasksService {
       return {
         success: true,
         data: updated,
-        message: 'Task assigned successfully',
+        message: 'Task assigned success',
       };
     } catch (error) {
       this.logger.error('Error in assign', error);
@@ -248,7 +248,7 @@ export class TasksService {
 
       await this.prisma.task.delete({ where: { id } });
 
-      return { success: true, message: 'Task deleted successfully' };
+      return { success: true, message: 'Task deleted success' };
     } catch (error) {
       this.logger.error('Error in remove', error);
       return { success: false, message: 'Failed to delete task' };
