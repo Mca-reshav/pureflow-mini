@@ -6,6 +6,7 @@ import { CreateTimeEntryDto } from './dto/create-time.dto';
 import { UpdateTimeEntryDto } from './dto/update-time.dto';
 import { baseSelect, populated, versionsSelect } from './time.utils';
 import dayjs from 'dayjs';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TimeService {
@@ -14,6 +15,7 @@ export class TimeService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findAll(userId: string, role: Role, taskId?: string) {
@@ -115,9 +117,28 @@ export class TimeService {
         },
       });
 
-      if (isLate)
-        this.logger.warn(`Late time entry logged :: userId=${userId}`);
+      if (isLate) {
+        const [project, taskTitle] = await Promise.all([
+          this.prisma.project.findUnique({
+            where: { id: task.projectId },
+            select: { ownerId: true },
+          }),
+          this.prisma.task.findUnique({
+            where: { id: dto.taskId },
+            select: { title: true },
+          }),
+        ]);
 
+        if (project && taskTitle)
+          await this.notificationsService.emitTimeLate({
+            timeEntryId: entry.id,
+            taskTitle: taskTitle?.title,
+            userId,
+            managerId: project?.ownerId ?? userId,
+          });
+
+        this.logger.warn(`Late time entry logged :: userId=${userId}`);
+      }
       this.logger.log(`Time entry created :: ${dto.minutes}mins by ${userId}`);
 
       return {

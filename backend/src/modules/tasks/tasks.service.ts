@@ -4,11 +4,15 @@ import { Prisma, Role } from '@prisma/client';
 import { AssignTaskDto, CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { baseSelect, fetchPopulate } from './tasks.utils';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll(userId: string, role: Role, projectId?: string) {
     try {
@@ -229,6 +233,13 @@ export class TasksService {
         },
       });
 
+      if (updated)
+        await this.notificationsService.emitTaskAssigned({
+          taskId: id,
+          taskTitle: updated.title,
+          assigneeId: dto.assigneeId,
+          assignedBy: 'system',
+        });
       this.logger.log(`Task ${id} assigned to ${dto.assigneeId}`);
       return {
         success: true,

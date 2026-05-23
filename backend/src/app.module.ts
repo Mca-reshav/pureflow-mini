@@ -10,6 +10,8 @@ import { UsersModule } from './modules/users/users.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { TimeModule } from './modules/time/time.module';
+import { SseService } from './modules/notifications/services/sse.service';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,7 +45,8 @@ import { TimeModule } from './modules/time/time.module';
     ProjectsModule,
     TasksModule,
     TimeModule,
+    NotificationsModule,
   ],
-  providers: [RedisService],
+  providers: [RedisService, SseService],
 })
 export class AppModule {}
