@@ -56,11 +56,7 @@ async function main() {
     },
   });
 
-  console.log('Users created :: ', {
-    admin: admin.email,
-    bm: bm.email,
-    analyst: analyst.email,
-  });
+  console.log('Users created :: ', [admin.role, bm.role, analyst.role]);
 
   const project = await prisma.project.upsert({
     where: { id: 'seed-project-001' },
@@ -138,10 +134,10 @@ async function main() {
     },
   });
 
-  console.log('Time entry created');
+  console.log('Time entry created :: ');
 
-  console.log('\n Seed complete!');
-  console.log('\n Login credentials :: ' + password);
+  console.log('Seed completed ::');
+  console.log('Login credentials :: ' + password);
   console.log('ADMIN :: ' + emailObj.admin);
   console.log('BM :: ' + emailObj.bm);
   console.log('ANALYST :: ' + emailObj.analyst);
