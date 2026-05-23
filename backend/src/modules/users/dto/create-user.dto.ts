@@ -1,8 +1,6 @@
 import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { password } from 'prisma/seed';
-
 export class CreateUserDto {
   @ApiProperty({ example: 'John Doe' })
   @IsString()
@@ -12,7 +10,7 @@ export class CreateUserDto {
   @IsEmail()
   email!: string;
 
-  @ApiProperty({ example: password })
+  @ApiProperty({ example: 'john1234!' })
   @IsString()
   @MinLength(6)
   password!: string;

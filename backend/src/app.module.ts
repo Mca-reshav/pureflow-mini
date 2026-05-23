@@ -8,6 +8,7 @@ import { HealthModule } from './modules/health/health.module';
 import { RedisService } from './services/redis/redis.service';
 import { UsersModule } from './modules/users/users.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,6 +40,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
     HealthModule,
     UsersModule,
     ProjectsModule,
+    TasksModule,
   ],
   providers: [RedisService],
 })

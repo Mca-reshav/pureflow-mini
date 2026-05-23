@@ -1,146 +1,134 @@
-import {
-  PrismaClient,
-  Role,
-  UserStatus,
-  ProjectStatus,
-  TaskStatus,
-  TaskPriority,
-} from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import {
+  emailObj,
+  passwordObj,
+  usersData,
+  projectsData,
+  tasksData,
+  timeEntriesData,
+} from './seed.data';
 
 const prisma = new PrismaClient();
-export const password = 'Password@123',
-  emailObj = Object.freeze({
-    admin: 'admin@pureflow.dev',
-    analyst: 'analyst@pureflow.dev',
-    bm: 'bm@pureflow.dev',
-  } as const);
 
 async function main() {
   console.log('Seeding database...');
 
-  const passwordHash = await bcrypt.hash(password, 12);
-  const admin = await prisma.user.upsert({
-    where: { email: emailObj.admin },
-    update: {},
-    create: {
-      name: 'Admin User',
-      email: emailObj.admin,
-      passwordHash,
-      role: Role.ADMIN,
-      status: UserStatus.active,
+  const userMap: Record<string, string> = {};
+
+  for (const u of usersData) {
+    const passwordHash = await bcrypt.hash(u.password, 12);
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
+      update: { name: u.name, passwordHash },
+      create: {
+        name: u.name,
+        email: u.email,
+        passwordHash,
+        role: u.role,
+        status: u.status,
+      },
+    });
+    userMap[u.email] = user.id;
+  }
+
+  console.log('Users created ::', Object.keys(userMap).length);
+
+  for (const p of projectsData) {
+    await prisma.project.upsert({
+      where: { id: p.id },
+      update: {},
+      create: {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        status: p.status,
+        ownerId: userMap[p.ownerEmail],
+        startDate: p.startDate,
+        endDate: p.endDate,
+      },
+    });
+  }
+
+  console.log('Projects created ::', projectsData.length);
+
+  const memberCombos = [
+    {
+      projectId: 'seed-project-001',
+      userId: userMap[emailObj.analyst],
+      addedBy: userMap[emailObj.bm],
     },
-  });
-
-  const bm = await prisma.user.upsert({
-    where: { email: emailObj.bm },
-    update: {},
-    create: {
-      name: 'Business Manager',
-      email: emailObj.bm,
-      passwordHash,
-      role: Role.BM,
-      status: UserStatus.active,
+    {
+      projectId: 'seed-project-002',
+      userId: userMap[emailObj.analyst],
+      addedBy: userMap[emailObj.bm],
     },
-  });
-
-  const analyst = await prisma.user.upsert({
-    where: { email: emailObj.analyst },
-    update: {},
-    create: {
-      name: 'Analyst User',
-      email: emailObj.analyst,
-      passwordHash,
-      role: Role.ANALYST,
-      status: UserStatus.active,
+    {
+      projectId: 'seed-project-001',
+      userId: userMap[emailObj.bm],
+      addedBy: userMap[emailObj.admin],
     },
-  });
-
-  console.log('Users created :: ', [admin.role, bm.role, analyst.role]);
-
-  const project = await prisma.project.upsert({
-    where: { id: 'seed-project-001' },
-    update: {},
-    create: {
-      id: 'seed-project-001',
-      name: 'PureFlow Platform',
-      description: 'Main product development project',
-      status: ProjectStatus.active,
-      ownerId: bm.id,
-      startDate: new Date('2026-05-22'),
-      endDate: new Date('2026-06-22'),
+    {
+      projectId: 'seed-project-002',
+      userId: userMap[emailObj.bm],
+      addedBy: userMap[emailObj.admin],
     },
-  });
+  ];
 
-  await prisma.projectMember.upsert({
-    where: { projectId_userId: { projectId: project.id, userId: analyst.id } },
-    update: {},
-    create: {
-      projectId: project.id,
-      userId: analyst.id,
-      addedBy: bm.id,
-    },
-  });
+  for (const m of memberCombos) {
+    await prisma.projectMember.upsert({
+      where: { projectId_userId: { projectId: m.projectId, userId: m.userId } },
+      update: {},
+      create: m,
+    });
+  }
 
-  console.log('Project created :: ', project.name);
+  console.log('Project members added :: ' + memberCombos.length);
 
-  const task1 = await prisma.task.upsert({
-    where: { id: 'seed-task-001' },
-    update: {},
-    create: {
-      id: 'seed-task-001',
-      projectId: project.id,
-      title: 'Setup authentication module',
-      description: 'Implement JWT-based auth with refresh tokens',
-      status: TaskStatus.in_progress,
-      priority: TaskPriority.high,
-      assigneeId: analyst.id,
-      createdById: bm.id,
-      expectedMinutes: 240,
-      dueDate: new Date('2026-05-30'),
-    },
-  });
+  for (const t of tasksData) {
+    await prisma.task.upsert({
+      where: { id: t.id },
+      update: {},
+      create: {
+        id: t.id,
+        projectId: t.projectId,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        priority: t.priority,
+        assigneeId: userMap[t.assigneeEmail],
+        createdById: userMap[emailObj.bm],
+        expectedMinutes: t.expectedMinutes,
+        dueDate: t.dueDate,
+      },
+    });
+  }
 
-  const task2 = await prisma.task.upsert({
-    where: { id: 'seed-task-002' },
-    update: {},
-    create: {
-      id: 'seed-task-002',
-      projectId: project.id,
-      title: 'Design database schema',
-      description: 'Create all domain schemas with proper indexes',
-      status: TaskStatus.done,
-      priority: TaskPriority.critical,
-      assigneeId: analyst.id,
-      createdById: bm.id,
-      expectedMinutes: 180,
-    },
-  });
+  console.log('Tasks created ::', tasksData.length);
 
-  console.log('Tasks created :: ', task1.title, '|', task2.title);
+  for (const e of timeEntriesData) {
+    await prisma.timeEntry.upsert({
+      where: { id: e.id },
+      update: {},
+      create: {
+        id: e.id,
+        taskId: e.taskId,
+        projectId: e.projectId,
+        userId: userMap[e.userEmail],
+        minutes: e.minutes,
+        entryDate: e.entryDate,
+        notes: e.notes,
+        isLate: e.isLate,
+      },
+    });
+  }
 
-  await prisma.timeEntry.upsert({
-    where: { id: 'seed-time-001' },
-    update: {},
-    create: {
-      id: 'seed-time-001',
-      taskId: task1.id,
-      projectId: project.id,
-      userId: analyst.id,
-      minutes: 90,
-      entryDate: new Date(),
-      notes: 'Initial setup and planning',
-      isLate: false,
-    },
-  });
-
-  console.log('Time entry created :: ');
+  console.log('Time entries created :: ' + timeEntriesData.length);
 
   console.log('Seed completed ::');
-  console.log('Login credentials :: ' + password);
-  console.log('ADMIN :: ' + emailObj.admin);
-  console.log('BM :: ' + emailObj.bm);
-  console.log('ANALYST :: ' + emailObj.analyst);
+  console.log('ADMIN :: ', [emailObj.admin, passwordObj.admin]);
+  console.log('BM :: ', [emailObj.bm, passwordObj.bm]);
+  console.log('ANALYST :: ', [emailObj.analyst, passwordObj.analyst]);
 }
 
 main()
