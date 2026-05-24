@@ -1,7 +1,5 @@
-export default function Home() {
-  return (
-    <>
-    <p>Next app</p>
-    </>
-  );
+import { redirect } from 'next/navigation';
+
+export default function RootPage() {
+  redirect('/login');
 }
