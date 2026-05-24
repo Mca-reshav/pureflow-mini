@@ -4,6 +4,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { AuditService } from './modules/audit/audit.service';
+import { AuditInterceptor } from './interceptor/audit.interceptor';
+import { AuditContextService } from './modules/audit/services/audit-context.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +26,13 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  const auditService = app.get(AuditService);
+  const auditContextService = app.get(AuditContextService);
+  app.useGlobalInterceptors(
+    new AuditInterceptor(auditService, auditContextService),
+  );
+
   const config = new DocumentBuilder()
     .setTitle('PureFlow API')
     .setDescription('PureFlow Mini API')
