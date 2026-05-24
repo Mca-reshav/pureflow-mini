@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
@@ -13,6 +13,8 @@ import { TimeModule } from './modules/time/time.module';
 import { SseService } from './modules/notifications/services/sse.service';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { RequestIdMiddleware } from './middlewares/request-id.mw';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -48,7 +50,12 @@ import { ReportsModule } from './modules/reports/reports.module';
     TimeModule,
     NotificationsModule,
     ReportsModule,
+    AuditModule,
   ],
   providers: [RedisService, SseService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}
