@@ -12,6 +12,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { TimeModule } from './modules/time/time.module';
 import { SseService } from './modules/notifications/services/sse.service';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReportsModule } from './modules/reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -46,6 +47,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     TasksModule,
     TimeModule,
     NotificationsModule,
+    ReportsModule,
   ],
   providers: [RedisService, SseService],
 })
