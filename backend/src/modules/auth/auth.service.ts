@@ -8,6 +8,8 @@ import { Role } from '@prisma/client';
 import { LoginDto } from './dto/auth.dto';
 import { RedisService } from 'src/services/redis/redis.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { transformProjects } from './utils/transformProjects.util';
+import dayjs from 'dayjs';
 
 type RefreshTokenPayload = {
   sub?: string;
@@ -182,12 +184,34 @@ export class AuthService {
       const notificationCnt = await this.prisma.notification.count({
         where: { userId, isRead: false },
       });
+      const oneWeekAgo = dayjs().subtract(7, 'day').toDate();
+      const [projectData, tasksData, loggedData] = await Promise.all([
+        this.prisma.project.findMany({
+          where: { ownerId: userId, status: { not: 'archived' } },
+          select: { name: true, status: true, startDate: true, endDate: true },
+          orderBy: { createdAt: 'desc' },
+        }),
 
+        this.prisma.task.findMany({
+          where: { assigneeId: userId },
+          select: { title: true, status: true, priority: true, dueDate: true },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        }),
+
+        this.prisma.timeEntry.findMany({
+          where: { userId, createdAt: { gte: oneWeekAgo } },
+          select: { minutes: true, createdAt: true },
+        }),
+      ]);
       const respObj = {
         ...user,
         navigation: this.buildNavigation(user.role),
         permissions: this.buildPermissions(user.role),
         notificationCnt,
+        projectSummary: projectData ? transformProjects(projectData) : null,
+        recentTasks: tasksData || [],
+        loggedHours: loggedData || [],
       };
 
       return { success: true, data: respObj, message: 'Fetched success' };
@@ -279,7 +303,7 @@ export class AuthService {
       users: { label: 'Users', href: '/app/admin/users', icon: 'Users' },
       auditLog: {
         label: 'Audit Log',
-        href: '/app/admin/audit',
+        href: '/app/audit',
         icon: 'ShieldCheck',
       },
     };

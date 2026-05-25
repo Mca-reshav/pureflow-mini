@@ -29,6 +29,27 @@ export interface Permissions {
   'capacity.team': boolean;
 }
 
+export interface IProjectSummary {
+  activeProjectsCount: number;
+  completedProjectsCount: number;
+  latestProject: {
+    name: string;
+    startDate: string;
+    endDate: string;
+  } | null;
+};
+
+export interface IRecentTasks {
+  title: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+}[];
+
+export interface ILoggedHours {
+  minutes: number;
+  createdAt: string;
+}[];
 export interface MeResponse {
   id: string;
   name: string;
@@ -38,6 +59,9 @@ export interface MeResponse {
   navigation: NavigationItem[];
   permissions: Permissions;
   notificationCnt: number;
+  projectSummary: IProjectSummary,
+  recentTasks: IRecentTasks,
+  loggedHours: ILoggedHours,
 }
 
 
