@@ -20,12 +20,13 @@ export interface Permissions {
   'project.addMember': boolean;
   'task.create': boolean;
   'task.assign': boolean;
-  'task.viewExpectedMinutes': boolean;
+  'expected_hours.read': boolean;
   'time.log': boolean;
   'time.editOwn': boolean;
   'report.export': boolean;
   'admin.users': boolean;
   'audit.read': boolean;
+  'capacity.team': boolean;
 }
 
 export interface MeResponse {

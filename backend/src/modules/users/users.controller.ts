@@ -65,4 +65,11 @@ export class UsersController {
   deactivate(@Param('id') id: string, @CurrentUser('id') actorId: string) {
     return this.usersService.deactivate(id, actorId);
   }
+
+  @Patch('reactivate/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reactivate user' })
+  reactivate(@Param('id') id: string, @CurrentUser('id') actorId: string) {
+    return this.usersService.reactivate(id, actorId);
+  }
 }

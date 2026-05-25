@@ -293,38 +293,29 @@ export class AuthService {
 
   private buildPermissions(role: Role): Record<string, boolean> {
     const permissions: Record<string, boolean> = {
-      'task.create': true,
       'time.log': true,
       'time.editOwn': true,
       'report.export': true,
     };
 
-    if (role === Role.ADMIN) {
-      const custom = {
-        'project.create': true,
-        'project.viewAll': true,
-        'project.addMember': true,
-        'task.assign': true,
-        'task.viewExpectedMinutes': true,
+    const custom: Record<string, boolean> = {
+      'task.create': true,
+      'task.assign': true,
+      'expected_hours.read': true,
+      'project.create': true,
+      'project.viewAll': true,
+      'audit.read': true,
+      'capacity.team': true,
+    };
+    if (role === Role.ADMIN)
+      return {
+        ...custom,
         'admin.users': true,
-        'audit.read': true,
-      };
-
-      return { ...custom, ...permissions };
-    }
-
-    if (role === Role.BM) {
-      const custom = {
-        'project.create': true,
-        'project.viewAll': true,
         'project.addMember': true,
-        'task.assign': true,
-        'task.viewExpectedMinutes': true,
-        'audit.read': true,
+        ...permissions,
       };
 
-      return { ...custom, ...permissions };
-    }
+    if (role === Role.BM) return { ...custom, ...permissions };
 
     return permissions;
   }
