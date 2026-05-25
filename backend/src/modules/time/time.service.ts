@@ -32,6 +32,10 @@ export class TimeService {
           updatedAt: true,
           task: populated.task,
           user: { select: { id: true, name: true, email: true } },
+          versions: {
+            ...versionsSelect,
+            orderBy: { versionNo: 'asc' },
+          },
         },
         orderBy: { entryDate: 'desc' },
       });
@@ -98,6 +102,17 @@ export class TimeService {
           message: 'Log time only your tasks',
         };
 
+      // update from here
+      const isExist = await this.prisma.timeEntry.findFirst({
+        where: { taskId: task.id },
+        select: { id: true },
+      });
+
+      if (isExist) {
+        const resp = await this.update(isExist.id, dto, userId, role);
+        if (resp.success) this.logger.log(`Time entry updated by ${userId}`);
+        return resp;
+      }
       const entryDate = new Date(dto.entryDate),
         isLate = this.isLateEntry(entryDate);
 

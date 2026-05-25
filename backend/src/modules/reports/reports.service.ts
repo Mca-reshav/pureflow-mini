@@ -142,9 +142,7 @@ export class ReportsService {
         data: { downloadCount: { increment: 1 } },
       });
 
-      const signedUrl = await this.minioService.getPresignedUrl(
-        artifact.storagePath,
-      );
+      const signedUrl = this.minioService.getPresignedUrl(artifact.storagePath);
 
       return {
         success: true,
