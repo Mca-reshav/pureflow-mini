@@ -14,13 +14,16 @@ import {
 
 export default function DashboardAnalytics({
   me,
-}: Partial<MeResponse>) {
+}: {
+  me?: MeResponse;
+}) {
   const projectSummary = me?.projectSummary;
-  const recentTasks = me?.recentTasks ?? [];
-  const loggedHours = me?.loggedHours ?? [];
-  const notificationCount = me?.notificationCount ?? 0;
+  const recentTasks = (me?.recentTasks ?? []) as unknown as any[];
+  const loggedHours =
+    me?.loggedHours ?? ([] as unknown as MeResponse['loggedHours']);
+  const notificationCount = me?.notificationCnt ?? 0;
 
-  const groupedHours = loggedHours.reduce(
+  const groupedHours = (loggedHours as unknown as any[]).reduce(
     (acc, item) => {
       const date = dayjs(item.createdAt).format(
         'DD MMM',
@@ -38,7 +41,7 @@ export default function DashboardAnalytics({
     groupedHours,
   ).map(([date, hours]) => ({
     date,
-    hours: Number(hours.toFixed(1)),
+    hours: Number((hours as number).toFixed(1)),
   }));
 
   const taskStatusMap = recentTasks.reduce(
