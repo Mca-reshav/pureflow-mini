@@ -169,4 +169,25 @@ export class UsersService {
       return { success: false, message: 'Failed to deactivate' };
     }
   }
+
+  async reactivate(id: string, actorId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id, status: 'inactive' },
+      });
+      if (!user) return { success: true, message: 'User not found' };
+
+      const updateResp = await this.prisma.user.update({
+        where: { id },
+        data: { status: 'active' },
+      });
+      if (!updateResp) return { success: false, message: 'Failed to update' };
+
+      this.logger.log(`User reactivated :: ${user.email} by ${actorId}`);
+      return { success: true, message: 'User reactivated' };
+    } catch (error) {
+      this.logger.error('Error in reactivate service', error);
+      return { success: false, message: 'Failed to reactivate' };
+    }
+  }
 }

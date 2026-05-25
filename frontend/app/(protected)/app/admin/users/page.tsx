@@ -73,6 +73,16 @@ export default function UsersPage() {
     }
   }
 
+  async function handleReactivate(id: string) {
+    if (!confirm('Reactivate this user?')) return;
+    try {
+      await api.patch(`/users/reactivate/${id}`);
+      fetchUsers();
+    } catch (err: any) {
+      alert(err?.response?.data?.message ?? 'Failed to reactivate');
+    }
+  }
+
   async function handleRoleChange(id: string, role: string) {
     try {
       await api.patch(`/users/${id}`, { role });
@@ -109,8 +119,8 @@ export default function UsersPage() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               {labels.map((label) => (
-                <th key={label} 
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{label}</th>
+                <th key={label}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{label}</th>
               ))}
             </tr>
           </thead>
@@ -141,12 +151,19 @@ export default function UsersPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  {user.status === 'active' && (
+                  {user.status === 'active' ? (
                     <button
                       onClick={() => handleDeactivate(user.id)}
                       className="text-xs text-red-500 hover:text-red-700"
                     >
                       Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleReactivate(user.id)}
+                      className="text-xs text-green-500 hover:text-red-700"
+                    >
+                      Reactivate
                     </button>
                   )}
                 </td>

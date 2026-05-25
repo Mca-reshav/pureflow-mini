@@ -21,11 +21,12 @@ export default function LoginPage() {
 
     try {
       const res = await api.post('/auth/login', { email, password });
-      const { accessToken } = res.data.data;
+      const { accessToken, user } = res.data.data;
 
       setAccessToken(accessToken);
       await fetchMe(accessToken);
-      router.push('/app/dashboard');
+      const role = user?.role;
+      router.push(role === 'ANALYST' ? '/app/my-tasks' : '/app/dashboard');
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Invalid credential';
       setError(msg);
