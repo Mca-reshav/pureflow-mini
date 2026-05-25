@@ -201,6 +201,8 @@ enum NotificationType {
   project_member_added
   report_ready
   time_late_logged
+  session_ended
+  user_role_changed 
 
   @@schema("notify")
 }

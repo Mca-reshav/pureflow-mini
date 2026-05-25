@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    private notificationService: NotificationsService,
   ) {}
 
   async findAll() {
@@ -130,6 +132,10 @@ export class UsersService {
       });
 
       if (!updated) return { success: false, message: 'Failed to update' };
+      if (roleChanging) {
+        const change = `From ${user.role} To ${dto.role}`;
+        await this.notificationService.emitRoleChanged(id, actorId, change);
+      }
       if (roleChanging || statusChanging) {
         const resp = await this.authService.revokeAllUserSessions(id);
         if (!resp || !resp.success)

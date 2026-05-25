@@ -8,4 +8,6 @@ export const JOB_SLUG = Object.freeze({
   MEMBER_ADDED: 'project.member.added',
   TIME_LATE: 'time.late_logged',
   REPORT_EXPORT: 'report.export',
+  ROLE_CHANGED: 'user.role.changed',
+  SESSION_ENDED: 'session.ended',
 } as const);

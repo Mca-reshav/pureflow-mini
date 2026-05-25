@@ -7,11 +7,11 @@ import { getAccessToken } from '@/lib/auth';
 interface Notification {
   id: string;
   title: string;
-  message: string;
+  body: string;
   type: string;
+  entityType: string;
   isRead: boolean;
   createdAt: string;
-  link?: string;
 }
 
 const TYPE_STYLES: Record<string, { dot: string; badge: string }> = {
@@ -202,7 +202,8 @@ function NotificationRow({ notification: n }: { notification: Notification }) {
             {n.type}
           </span>
         </div>
-        <p className="text-xs text-gray-500 line-clamp-2">{n.message}</p>
+        <p className="text-xs text-gray-500 line-clamp-2">{n.body}</p>
+        <strong className="text-xs text-gray-500 line-clamp-2 mt-2">{n.entityType.toUpperCase()}</strong>
         <p className="text-xs text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
       </div>
     </div>

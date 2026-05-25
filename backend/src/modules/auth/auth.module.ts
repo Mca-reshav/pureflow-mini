@@ -10,6 +10,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { RedisService } from 'src/services/redis/redis.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RedisService } from 'src/services/redis/redis.service';
         url: `redis://:${config.get('REDIS_PASSWORD')}@${config.get('REDIS_HOST', 'redis')}:${config.get('REDIS_PORT', 6379)}`,
       }),
     }),
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [

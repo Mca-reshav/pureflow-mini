@@ -7,6 +7,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { Role } from '@prisma/client';
 import { LoginDto } from './dto/auth.dto';
 import { RedisService } from 'src/services/redis/redis.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type RefreshTokenPayload = {
   sub?: string;
@@ -23,6 +24,7 @@ export class AuthService {
     private jwtService: JwtService,
     private config: ConfigService,
     private redisServices: RedisService,
+    private notificationService: NotificationsService,
   ) {}
 
   async login(dto: LoginDto, ipHash?: string, userAgent?: string) {
@@ -110,7 +112,7 @@ export class AuthService {
       if (!tokenValid)
         return { success: false, message: 'Invalidated refresh token' };
 
-      await this.revokeSession(sessionId);
+      await this.revokeSession(sessionId, session.user.id);
 
       const newSessionId = createId();
       const { accessToken, refreshToken: newRefreshToken } =
@@ -150,7 +152,7 @@ export class AuthService {
 
   async logout(sessionId: string, userId: string) {
     try {
-      const response = await this.revokeSession(sessionId);
+      const response = await this.revokeSession(sessionId, userId);
       if (!response)
         return { success: false, message: 'Failed to revoke session' };
       this.logger.log(`User logged out: userId=${userId}`);
@@ -205,7 +207,7 @@ export class AuthService {
         return { success: false, message: 'Failed to get sessions' };
 
       for (const session of sessions) {
-        const resp = await this.revokeSession(session.id);
+        const resp = await this.revokeSession(session.id, userId);
         if (!resp)
           return {
             success: false,
@@ -250,7 +252,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private async revokeSession(sessionId: string) {
+  private async revokeSession(sessionId: string, userId: string) {
     const key = `session:${sessionId}`;
     const removeFromRedis = await this.redisServices.del(key);
     if (!removeFromRedis) return false;
@@ -259,7 +261,8 @@ export class AuthService {
       where: { id: sessionId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
-
+    if (updateSession)
+      await this.notificationService.emitSessionEnded(sessionId, userId);
     return !!updateSession;
   }
 
