@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Request } from 'express';
 
 export interface JwtPayload {
   sub: string; // user id
@@ -21,7 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!secret) throw new Error('JWT_ACCESS_SECRET is not set');
 
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: Request) => (req?.query?.token as string) ?? null,
+      ]),
       ignoreExpiration: false,
       secretOrKey: secret,
     });

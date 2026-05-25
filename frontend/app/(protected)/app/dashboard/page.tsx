@@ -18,7 +18,7 @@ export default function DashboardPage() {
     },
     {
       label: 'Notifications',
-      value: `${me?.unreadNotificationCount ?? 0} unread`,
+      value: `${me?.notificationCnt ?? 0} unread`,
       valueClass: 'text-gray-800',
     },
   ];

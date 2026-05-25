@@ -37,7 +37,7 @@ export interface MeResponse {
   status: string;
   navigation: NavigationItem[];
   permissions: Permissions;
-  unreadNotificationCount: number;
+  notificationCnt: number;
 }
 
 
