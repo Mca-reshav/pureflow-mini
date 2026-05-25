@@ -209,13 +209,5 @@ function NotificationRow({ notification: n }: { notification: Notification }) {
     </div>
   );
 
-  if (n.link) {
-    return (
-      <a href={n.link} className="block">
-        {inner}
-      </a>
-    );
-  }
-
   return inner;
 }
