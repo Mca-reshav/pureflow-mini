@@ -96,9 +96,11 @@ export class NotificationsService {
         },
         baseOpt,
       );
-      this.logger.log(`Queued :: task.assigned :: ${data.assigneeId}`);
+      this.logger.log(
+        `Queued :: ${JOB_SLUG.TASK_ASSIGNED} :: ${data.assigneeId}`,
+      );
     } catch (error) {
-      this.logger.error('Error queuing task.assigned', error);
+      this.logger.error(`Error queuing ${JOB_SLUG.TASK_ASSIGNED}`, error);
     }
   }
 
@@ -117,9 +119,9 @@ export class NotificationsService {
         },
         baseOpt,
       );
-      this.logger.log(`Queued :: project.member.added :: ${data.userId}`);
+      this.logger.log(`Queued :: ${JOB_SLUG.MEMBER_ADDED} :: ${data.userId}`);
     } catch (error) {
-      this.logger.error('Error queuing project.member.added', error);
+      this.logger.error(`Error queuing ${JOB_SLUG.MEMBER_ADDED}`, error);
     }
   }
 
@@ -138,9 +140,47 @@ export class NotificationsService {
         },
         baseOpt,
       );
-      this.logger.log(`Queued :: time.late_logged :: bm=${data.managerId}`);
+      this.logger.log(
+        `Queued :: ${JOB_SLUG.TIME_LATE} :: bm=${data.managerId}`,
+      );
     } catch (error) {
-      this.logger.error('Error queuing time.late_logged', error);
+      this.logger.error(`Error queuing ${JOB_SLUG.TIME_LATE}`, error);
+    }
+  }
+
+  async emitRoleChanged(userId: string, actorId: string, change: string) {
+    try {
+      const data = { userId, actorId, change };
+      await this.notifyQueue.add(
+        JOB_SLUG.ROLE_CHANGED,
+        {
+          ...data,
+          eventId: `role_changed:${data.userId}`,
+        },
+        baseOpt,
+      );
+      this.logger.log(`Queued :: ${JOB_SLUG.ROLE_CHANGED}`);
+    } catch (error) {
+      this.logger.error(`Error queuing ${JOB_SLUG.ROLE_CHANGED}`, error);
+    }
+  }
+
+  async emitSessionEnded(sessionId: string, userId: string) {
+    try {
+      const data = { sessionId, userId };
+      await this.notifyQueue.add(
+        JOB_SLUG.SESSION_ENDED,
+        {
+          ...data,
+          eventId: `session_ended:${sessionId}`,
+        },
+        baseOpt,
+      );
+      this.logger.log(
+        `Queued :: ${JOB_SLUG.SESSION_ENDED} :: sessionId=${sessionId}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error queuing ${JOB_SLUG.SESSION_ENDED}`, error);
     }
   }
 }

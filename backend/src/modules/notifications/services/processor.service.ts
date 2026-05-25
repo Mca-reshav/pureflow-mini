@@ -5,7 +5,7 @@ import { Job } from 'bullmq';
 import { SseService } from './sse.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JOB_SLUG, QUEUE_SLUG } from '../notification.constant';
-
+import dayjs from 'dayjs';
 @Processor(QUEUE_SLUG.NOTIFICATIONS)
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
@@ -29,6 +29,12 @@ export class NotificationProcessor extends WorkerHost {
         break;
       case JOB_SLUG.TIME_LATE:
         await this.handleTimeLate(job.data);
+        break;
+      case JOB_SLUG.ROLE_CHANGED:
+        await this.handleRoleChanged(job.data);
+        break;
+      case JOB_SLUG.SESSION_ENDED:
+        await this.handleSessionEnded(job.data);
         break;
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);
@@ -157,6 +163,82 @@ export class NotificationProcessor extends WorkerHost {
       );
     } catch (error) {
       this.logger.error('Error handling time.late_logged', error);
+      throw error;
+    }
+  }
+
+  private async handleRoleChanged(data: {
+    userId: string;
+    actorId: string;
+    change: string;
+    eventId: string;
+  }) {
+    try {
+      const existing = await this.prisma.notification.findUnique({
+        where: { eventId: data.eventId },
+      });
+      if (existing) return;
+
+      const [_, unreadCount] = await Promise.all([
+        this.prisma.notification.create({
+          data: {
+            userId: data.userId,
+            type: 'user_role_changed',
+            title: 'User role changed',
+            body: `Your role has been changed: "${data.change}"`,
+            entityType: 'users',
+            entityId: data.userId,
+            eventId: data.eventId,
+          },
+        }),
+        this.prisma.notification.count({
+          where: { userId: data.userId, isRead: false },
+        }),
+      ]);
+
+      this.sseService.pushNotificationCount(data.userId, unreadCount);
+
+      this.logger.log(`Notification created :: user_role_changed`);
+    } catch (error) {
+      this.logger.error('Error handling user.role_changed', error);
+      throw error;
+    }
+  }
+
+  private async handleSessionEnded(data: {
+    sessionId: string;
+    userId: string;
+    eventId: string;
+  }) {
+    try {
+      const existing = await this.prisma.notification.findUnique({
+        where: { eventId: data.eventId },
+      });
+      if (existing) return;
+      const now = dayjs();
+      const at = now.format('YYYY-MM-DD HH:mm:ss')
+      const [_, unreadCount] = await Promise.all([
+        this.prisma.notification.create({
+          data: {
+            userId: data.userId,
+            type: 'session_ended',
+            title: 'Session Ended',
+            body: `A user session has been ended: "${at}"`,
+            entityType: 'session_ended',
+            entityId: data.sessionId,
+            eventId: data.eventId,
+          },
+        }),
+        this.prisma.notification.count({
+          where: { userId: data.userId, isRead: false },
+        }),
+      ]);
+
+      this.sseService.pushNotificationCount(data.userId, unreadCount);
+
+      this.logger.log(`Notification created :: session_ended`);
+    } catch (error) {
+      this.logger.error('Error handling session.ended', error);
       throw error;
     }
   }
